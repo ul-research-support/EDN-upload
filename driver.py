@@ -8,7 +8,7 @@ import numpy as np
 #import certifi         # lines 7 & 8 are necessary for utilizing REDCap API
 
 p='uploads'         #part of the filepath. Be sure to create your upload folder
-dr='05172017'         #folder destination for the upload file. Name it as the date of the upload
+dr='xxxxxxxx'         #folder destination for the upload file. Name it as the date of the upload, e.g. '06122017'
 
 
 title = sys.platform.title()
@@ -172,7 +172,7 @@ m1=malaria.pivot_table(index='AlienNumber',
                   columns='Treatment',
                   values='YN')
 m1 = m1.reset_index()
-m1.columns=['AlienNumber','ovs_malaria'] # , 'ovs_malaria_meds']
+m1.columns=['AlienNumber','ovs_malaria' , 'ovs_malaria_meds']
 m1['ovs_malaria']=1
 m1=m1[['AlienNumber','ovs_malaria']] # , 'ovs_malaria_meds']]
 #%% Merge the sets
@@ -333,11 +333,18 @@ d2.to_csv(path+'column_error.csv',index=False)
 #%%
 d2 = d2.T.groupby(level=0).first().T # added to remove duplicate columns
 data = d2.to_json(orient='records',double_precision=0)
+
+d2.cntry_code_dept.loc[d2.cntry_code_dept == 'UP'] = 'UA'
+d2.cntry_code_dept.loc[d2.cntry_code_dept == 'ZA'] = 'SF'
+d2.cntry_code_origin.loc[d2.cntry_code_origin == 'UP'] = 'UA'
+d2.cntry_code_origin.loc[d2.cntry_code_origin == 'ZA'] = 'SF'
+
 d2.replace('NaT', '', inplace=True, axis=1)  # added to remove NaT values from csv file
+
 #%%
 # pr.upload_data(data) 
 d2.fillna(value='', axis=1, inplace=True)
-d2.to_csv(path+'EDNupload_05172017.csv', index=False, date_format='%Y-%m-%d')
+d2.to_csv(path+'EDNupload_xxxxxxxx.csv', index=False, date_format='%Y-%m-%d')    # create CSV file for manual import
 
 #%% - Alternatively, perform upload using REDCap API 
 """
