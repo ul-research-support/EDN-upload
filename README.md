@@ -30,28 +30,12 @@ Ensure that all of your EDN files are named to match what is in the code (lines 
 
 You have two options for uploading: a straight upload using the REDCap API or a manual import of a CSV file.
 
-If uploading through the API, make sure to comment out the CSV creation code (line 341) and to remove the quotation marks that encase the REDCap API script as a string at the end of the file. Remember, you need a REDCap API token to perform the upload this way. Also, if there are any errors in the dataset that is to be uploaded, the API upload will fail. It is recommended to go with a manual REDCap import until the process is further automated to eliminate errors.
+If uploading through the API, make sure to comment out the CSV creation code (line 347) and to remove the quotation marks that encase the REDCap API script as a string at the end of the file. Remember, you need a REDCap API token to perform the upload this way. Also, if there are any errors in the dataset that is to be uploaded, the API upload will fail. It is recommended to go with a manual REDCap import until the process is further automated to eliminate all possible errors.
 
-If you are uploading via manual import, click Data Import Tool from the sidebar in REDCap and follow the instructions in REDCap to continue.
-
-This is the preferred method due to recurring errors in the EDN datasets.
+If you are uploading via manual import, click Data Import Tool from the sidebar in REDCap and follow the instructions in REDCap to  continue. This is the preferred method due to recurring errors in the EDN datasets.
 
 # Troubleshooting
 
-When performing a manual import of EDN data via REDCap, it is not unusual to encounter errors with the data. These errors are usually a quick fix, and should be handled within the CSV file before attempting to re-upload.
+Sometimes when running the driver script, a column error can occur on line 175, 177, or somewhere near these lines. In the event that this happens, interpret the cause of the error by reading the console output and adjust the code accordingly. Usually, this entails commenting our one of the columns on these lines, or doing the opposite. The code is always preserved in a comment line in case this error crops up. 
 
-Note: Oftentimes most errors encountered in the REDCap import method are due to country code discrepancies. Typically this occurs with Ukraine and South Africa specifically. This is because EDN and RedCAP fluctuate between two different country code standards: ISO (alpha-2) and FIPS 10-4.
-
-In the MySQL database that REDCap connects to, the codes for these countries are assigned as follows:
-
-    Ukraine: UA
-    South Africa: SF
-    
-However, in the EDN files we receive, these countries will typically show up with different codes that can result in an import error:
-
-    Ukraine: UP
-    South Africa: ZA
-    
-This is a recurring issue with the data that we receive from EDN. In order to successfully import the full dataset, these country codes need to be changed manually within the CSV file to UA and SF. Until a workaround is made either in MySQL or REDCap, this will continue to be a part of the upload process.
-
-For reference: http://www.nationsonline.org/oneworld/countrycodes.htm
+When performing a manual import of EDN data via REDCap, it is not unusual to encounter some errors in the dataset. These errors are usually minor and quick to fix, they should be handled within the CSV file before attempting to re-upload. 
