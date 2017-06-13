@@ -2,7 +2,7 @@
     Process_Data.py and driver.py authored by Dr. Robert Kelley, assistant professor 
     of computer science at St. Mary's College of Maryland. 
 
-Instructions for uploading EDN data to Refugee Health
+Instructions for uploading EDN data to Refugee Health:
 
   1. Get EDN files from a Refugee Health Program Coordinator, typically sent within a .zip file.  Specifically you need:
   a. DS-2054.txt
@@ -37,7 +37,5 @@ If uploading through the API, make sure to comment out the CSV creation code (li
 If you are uploading via manual import, click Data Import Tool from the sidebar in REDCap and follow the instructions in REDCap to  continue. This is the preferred method due to recurring errors in the EDN datasets.
 
 # Troubleshooting
-
-Sometimes when running the driver script, a column error can occur on line 175, 177, or somewhere near these lines. In the event that this happens, interpret the cause of the error by reading the console output and adjust the code accordingly. Usually, this entails commenting our one of the columns on these lines, or doing the opposite. The code is always preserved in a comment line in case this error crops up. 
 
 When performing a manual import of EDN data via REDCap, it is not unusual to encounter some errors in the dataset. These errors are usually minor and quick to fix, they should be handled within the CSV file before attempting to re-upload. 
