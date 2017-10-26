@@ -8,15 +8,15 @@ import numpy as np
 #import certifi         # lines 7 & 8 are necessary for utilizing REDCap API
 
 p='uploads'         #part of the filepath. Be sure to create your upload folder
-dr='xxxxxxxx'         #folder destination for the upload file. Name it as the date of the upload, e.g. '06122017'
+dr='mmddyyyy'         #folder destination for the upload file. Name it as the date of the upload, e.g. '06122017'
 
+path = 'C:\\Users\\japese01\\My Documents\\RefugeeHealth\\uploads\\'+p+'\\'+dr+'\\'  # insert filepath here
 
 title = sys.platform.title()
-if title=="Win32":
-    path = 'C:\\Users\\japese01\\My Documents\\RefugeeHealth\\uploads\\'+p+'\\'+dr+'\\'  #insert your filepath here!
+if title == 'linux2':
+    pd.options.mode.chained_assignment = None   # to fix a server error when running in vagrant
 else:
-    path = '//Users//rrkelley//Dropbox//working//'+p+'//'+dr+'//'       #secondary filepath (optional)
-
+    pass
 
 form2054=pd.read_csv(path+'DS-2054.txt',sep='|')
 form3025vac=pd.read_csv(path+'DS-3025 Vaccinations.txt',sep='|')
@@ -61,6 +61,8 @@ d.resettlement_agency.replace('969 CHEROKEE ROAD',1,inplace=True)
 d.resettlement_agency.replace('2220 WEST MARKET STREET',2,inplace=True)
 d.resettlement_agency.replace('1206 NORTH LIMESTONE',3,inplace=True)
 d.resettlement_agency.replace('233 WILLARD STREET',3,inplace=True)
+d.resettlement_agency.replace('1710 ALEXANDRIA DRIVE',3,inplace=True)
+d.resettlement_agency.replace('1710 ALEXANDRIA DRIVE, SUITE 2',3,inplace=True)
 d.resettlement_agency.replace('233 W.  NINTH  STREET,',5,inplace=True)
 d.resettlement_agency.replace('806 KENTON STREET',4,inplace=True)
 d.resettlement_agency.replace('806 KENTON ST',4,inplace=True)
@@ -85,6 +87,7 @@ d.resettlement_agency=map(nullify_addresses,d.resettlement_agency)
 d.VisaType.replace('R',1,inplace=True)
 d.VisaType.replace('SIV',4,inplace=True)
 d.VisaType.replace('V93',7,inplace=True)
+d.VisaType.replace('V92',8,inplace=True)
 d.VisaType.replace('P-R',5,inplace=True)
 d['immigration_status']=d.VisaType
 d.drop(['VisaType'],axis=1,inplace=True)
@@ -172,11 +175,27 @@ m1=malaria.pivot_table(index='AlienNumber',
                   columns='Treatment',
                   values='YN')
 m1 = m1.reset_index()
-m1.columns=['AlienNumber','ovs_malaria' , 'ovs_malaria_meds']
-m1['ovs_malaria']=1
-m1=m1[['AlienNumber','ovs_malaria']] # , 'ovs_malaria_meds']]
+try:    # the m1 variable fluctuates between having 2 and 3 columns
+    m1.columns=['AlienNumber','ovs_malaria']
+    m1['ovs_malaria']=1
+    m1=m1[['AlienNumber','ovs_malaria']]
+except:
+    m1.columns=['AlienNumber','ovs_malaria', 'ovs_malaria_meds']
+    m1['ovs_malaria']=1
+    m1=m1[['AlienNumber','ovs_malaria' , 'ovs_malaria_meds']]
+#%% placeholder code for the occurrence of ovs_syphilis field
+#syphilis=p[p['TreatmentType']=='Syphilis Rx Preventative (replace w/ actual column name)']
+#s1=syphilis.pivot_table(index='AlienNumber',
+#                        columns='Treatment',
+#                        values='YN')
+#s1 = s1.reset_index()
+
+#s1.columns=['AlienNumber','ovs_syphilis']
+#s1=['ovs_syphilis']=1
+#s1=s1[['AlienNumber','ovs_syphilis']]
 #%% Merge the sets
-t1=p1.merge(m1,how='left',left_on='AlienNumber',right_on='AlienNumber')                  
+t1=p1.merge(m1,how='left',left_on='AlienNumber',right_on='AlienNumber')
+#t1=t1.merge(s1,how='left',left_on='AlienNumber',right_on='AlienNumber') #syphilis table merge                 
 d=d.merge(t1,how='left')
 #%%Finish filling out meds information
 d.ovs_intstnl_parasites.fillna(0,inplace=True)
@@ -229,20 +248,27 @@ list do determine which vaccinations are in the list and adds those
 that are not so there is a column for each possible series vaccine.
 '''
 #pivot the table 
-vac_yn=v.pivot('AlienNumber','vacname','YN')
+try:
+    vac_yn=v.pivot('AlienNumber','vacname','YN')
+except:    # added on 7/13/2017 due to a 'duplicate index' error in the 3025-Vacc dataset; repeats for all v.pivot occurrences
+    v.drop_duplicates(inplace=True)
+    vac_yn=v.pivot('AlienNumber','vacname','YN')
+
+#%%
 series_vacs=['IPV','OPV','PCV10','PCV13','PCV7',
                  'PPSV23','Other MCV conjugate','MCV4','Other']
                  
 for vacs in series_vacs:
     if vacs not in vac_yn.columns:
        vac_yn[vacs]=np.NaN
+             
 #%%
-
 vac_yn['Polio']=map(pr.set_polio, vac_yn.IPV, vac_yn.OPV)
 vac_yn['Pneumo']=map(pr.set_pneumo,vac_yn.PCV10,vac_yn.PCV13,
             vac_yn.PCV7,vac_yn.PPSV23)
 vac_yn['Mcv']=map(pr.set_mcv,vac_yn['Other MCV conjugate'],vac_yn.MCV4)
-vac_yn.drop(series_vacs,axis=1,inplace=True)            
+vac_yn.drop(series_vacs,axis=1,inplace=True)   
+         
 #%%          
 vac_yn.columns=pr.make_columns(vac_yn.columns)
 vac_yn = vac_yn.reset_index()
@@ -253,7 +279,7 @@ def add_empty_columns(df,vacs):
         if vac not in df.columns:
             df[vac]=np.NaN
     return df
-
+ 
 vac_h1=v.pivot('AlienNumber','vacname','HistoryDate1')
 vac_hd1=add_empty_columns(vac_h1,series_vacs)
 vac_h2=v.pivot('AlienNumber','vacname','HistoryDate2')
@@ -268,6 +294,7 @@ vac_i1=v.pivot('AlienNumber','vacname','VaccineGivenByIOM1')
 vac_iom1=add_empty_columns(vac_i1,series_vacs)
 vac_i2=v.pivot('AlienNumber','vacname','VaccineGivenByIOM2')
 vac_iom2=add_empty_columns(vac_i2,series_vacs)
+
 #%%
 vac_hd1=pr.prep_columns(vac_hd1,vac_yn.columns,'_date1')
 vac_hd2=pr.prep_columns(vac_hd2,vac_yn.columns,'_date2')
@@ -291,12 +318,14 @@ depart_vac.to_csv(path+'departure_vaccinations.csv',index=False)
 
 #%%  Merge Vaccinations with data
 d=d.merge(vaccinations,how='left', left_on='AlienNumber', right_on='AlienNumber')
+
 #%% - AlienNumber - reformat the alien_no so it matches our storage format
 d['alien_no']=['A'+str(row) for row in d['AlienNumber']]  #list comprehension approach
 d.drop(['AlienNumber'],inplace=True,axis=1)
 
 #%%
 d1=d.dropna(axis='columns',how='all')
+
 #%%
 data_cols = [col for col in d1.columns if 'date' in col]
 for col in data_cols:
@@ -304,7 +333,8 @@ for col in data_cols:
     d1[col].replace('NaT','',inplace=True,axis=1)
 d2=d1.copy()
 d2.to_csv(path+'column_error.csv',index=False)
-#%%
+
+#%% - legacy code
 #d3 = d2[['alien_no','name','date_of_birth','gender',
 #        'resettlement_agency','immigration_status','us_arrival_date',
 #        'cntry_code_origin','cntry_code_dept', 
@@ -336,32 +366,18 @@ data = d2.to_json(orient='records',double_precision=0)
 
 d2.cntry_code_dept.loc[d2.cntry_code_dept == 'UP'] = 'UA'
 d2.cntry_code_dept.loc[d2.cntry_code_dept == 'ZA'] = 'SF'
+d2.cntry_code_dept.loc[d2.cntry_code_dept == 'GV'] = 'GN'
+d2.cntry_code_dept.loc[d2.cntry_code_dept == 'HO'] = ''
 d2.cntry_code_origin.loc[d2.cntry_code_origin == 'UP'] = 'UA'
 d2.cntry_code_origin.loc[d2.cntry_code_origin == 'ZA'] = 'SF'
+d2.cntry_code_origin.loc[d2.cntry_code_origin == 'GV'] = 'GN'
+d2.cntry_code_origin.loc[d2.cntry_code_origin == 'HO'] = ''
 
 d2.replace('NaT', '', inplace=True, axis=1)  # added to remove NaT values from csv file
 
-#%%
-# pr.upload_data(data) 
-d2.fillna(value='', axis=1, inplace=True)
-d2.to_csv(path+'EDNupload_xxxxxxxx.csv', index=False, date_format='%Y-%m-%d')    # create CSV file for manual import
+#%% - Create CSV file for upload purposes
+d2=d2.fillna(value='', axis=1)
+d2.to_csv(path+'EDNupload_'+dr+'.csv', index=False, date_format='%Y-%m-%d')    # create CSV file for manual import
 
 #%% - Alternatively, perform upload using REDCap API 
-"""
-import pycurl, cStringIO
-buf = cStringIO.StringIO()
-data = {
-    'token': '',         #insert your API token here
-    'content': 'project',
-    'format': 'json',
-    'returnFormat': 'json'
-}
-ch = pycurl.Curl()
-ch.setopt(ch.URL, 'https://refugeehealth.louisville.edu/api/')
-ch.setopt(ch.HTTPPOST, data.items())
-ch.setopt(ch.WRITEFUNCTION, buf.write)
-ch.perform()
-ch.close()
-print buf.getvalue()
-buf.close()
-"""
+# pr.upload_data(data)
